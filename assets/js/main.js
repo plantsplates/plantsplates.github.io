@@ -1,242 +1,356 @@
 /*
-	Astral by HTML5 UP
+	Story by HTML5 UP
 	html5up.net | @ajlkn
 	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
 */
 
 (function($) {
 
-	var settings = {
+	skel.breakpoints({
+		xlarge: '(max-width: 1680px)',
+		large: '(max-width: 1280px)',
+		medium: '(max-width: 980px)',
+		small: '(max-width: 736px)',
+		xsmall: '(max-width: 480px)',
+		xxsmall: '(max-width: 360px)'
+	});
 
-		// Speed to resize panel.
-			resizeSpeed: 600,
+	$(function() {
 
-		// Speed to fade in/out.
-			fadeSpeed: 300,
+		var	$window = $(window),
+			$body = $('body'),
+			$wrapper = $('#wrapper');
 
-		// Size factor.
-			sizeFactor: 11.5,
+		// Disable animations/transitions until the page has loaded.
+			$body.addClass('is-loading');
 
-		// Minimum point size.
-			sizeMin: 15,
-
-		// Maximum point size.
-			sizeMax: 20
-
-	};
-
-	var $window = $(window);
-
-	$window.on('load', function() {
-
-		skel
-			.breakpoints({
-				desktop: '(min-width: 737px)',
-				mobile: '(max-width: 736px)'
-			})
-			.viewport({
-				breakpoints: {
-					desktop: {
-						width: 1080,
-						scalable: false
-					}
-				}
-			})
-			.on('+desktop', function() {
-
-				var	$body = $('body'),
-					$main = $('#main'),
-					$panels = $main.find('.panel'),
-					$hbw = $('html,body,window'),
-					$footer = $('#footer'),
-					$wrapper = $('#wrapper'),
-					$nav = $('#nav'), $nav_links = $nav.find('a'),
-					$jumplinks = $('.jumplink'),
-					$form = $('form'),
-					panels = [],
-					activePanelId = null,
-					firstPanelId = null,
-					isLocked = false,
-					hash = window.location.hash.substring(1);
-
-				if (skel.vars.mobile) {
-
-					settings.fadeSpeed = 0;
-					settings.resizeSpeed = 0;
-					$nav_links.find('span').remove();
-
-				}
-
-				// Body.
-					$body._resize = function() {
-						var factor = ($window.width() * $window.height()) / (1440 * 900);
-						$body.css('font-size', Math.min(Math.max(Math.floor(factor * settings.sizeFactor), settings.sizeMin), settings.sizeMax) + 'pt');
-						$main.height(panels[activePanelId].outerHeight());
-						$body._reposition();
-					};
-
-					$body._reposition = function() {
-						if (skel.vars.mobile && (window.orientation == 0 || window.orientation == 180))
-							$wrapper.css('padding-top', Math.max((($window.height() - (panels[activePanelId].outerHeight() + $footer.outerHeight())) / 2) - $nav.height(), 30) + 'px');
-						else
-							$wrapper.css('padding-top', ((($window.height() - panels[firstPanelId].height()) / 2) - $nav.height()) + 'px');
-					};
-
-				// Panels.
-					$panels.each(function(i) {
-						var t = $(this), id = t.attr('id');
-
-						panels[id] = t;
-
-						if (i == 0) {
-
-							firstPanelId = id;
-							activePanelId = id;
-
-						}
-						else
-							t.hide();
-
-						t._activate = function(instant) {
-
-							// Check lock state and determine whether we're already at the target.
-								if (isLocked
-								||	activePanelId == id)
-									return false;
-
-							// Lock.
-								isLocked = true;
-
-							// Change nav link (if it exists).
-								$nav_links.removeClass('active');
-								$nav_links.filter('[href="#' + id + '"]').addClass('active');
-
-							// Change hash.
-								if (i == 0)
-									window.location.hash = '#';
-								else
-									window.location.hash = '#' + id;
-
-							// Add bottom padding.
-								var x = parseInt($wrapper.css('padding-top')) +
-										panels[id].outerHeight() +
-										$nav.outerHeight() +
-										$footer.outerHeight();
-
-								if (x > $window.height())
-									$wrapper.addClass('tall');
-								else
-									$wrapper.removeClass('tall');
-
-							// Fade out active panel.
-								$footer.fadeTo(settings.fadeSpeed, 0.0001);
-								panels[activePanelId].fadeOut(instant ? 0 : settings.fadeSpeed, function() {
-
-									// Set new active.
-										activePanelId = id;
-
-										// Force scroll to top.
-											$hbw.animate({
-												scrollTop: 0
-											}, settings.resizeSpeed, 'swing');
-
-										// Reposition.
-											$body._reposition();
-
-										// Resize main to height of new panel.
-											$main.animate({
-												height: panels[activePanelId].outerHeight()
-											}, instant ? 0 : settings.resizeSpeed, 'swing', function() {
-
-												// Fade in new active panel.
-													$footer.fadeTo(instant ? 0 : settings.fadeSpeed, 1.0);
-													panels[activePanelId].fadeIn(instant ? 0 : settings.fadeSpeed, function() {
-
-														// Unlock.
-															isLocked = false;
-
-													});
-											});
-
-								});
-
-						};
-
-					});
-
-				// Nav + Jumplinks.
-					$nav_links.add($jumplinks).click(function(e) {
-						var t = $(this), href = t.attr('href'), id;
-
-						if (href.substring(0,1) == '#') {
-
-							e.preventDefault();
-							e.stopPropagation();
-
-							id = href.substring(1);
-
-							if (id in panels)
-								panels[id]._activate();
-
-						}
-
-					});
-
-				// Window.
-					$window
-						.resize(function() {
-
-							if (!isLocked)
-								$body._resize();
-
-						});
-
-					$window
-						.on('orientationchange', function() {
-
-							if (!isLocked)
-								$body._reposition();
-
-						});
-
-					if (skel.vars.IEVersion < 9)
-						$window
-							.on('resize', function() {
-								$wrapper.css('min-height', $window.height());
-							});
-
-				// Fix: Placeholder polyfill.
-					$('form').placeholder();
-
-				// Prioritize "important" elements on mobile.
-					skel.on('+mobile -mobile', function() {
-						$.prioritize(
-							'.important\\28 mobile\\29',
-							skel.breakpoint('mobile').active
-						);
-					});
-
-				// CSS polyfills (IE<9).
-					if (skel.vars.IEVersion < 9)
-						$(':last-child').addClass('last-child');
-
-				// Init.
-					$window
-						.trigger('resize');
-
-					if (hash && hash in panels)
-						panels[hash]._activate(true);
-
-					$wrapper.fadeTo(400, 1.0);
-
-			})
-			.on('-desktop', function() {
-
+			$window.on('load', function() {
 				window.setTimeout(function() {
-					location.reload(true);
-				}, 50);
-
+					$body.removeClass('is-loading');
+				}, 100);
 			});
+
+		// Fix: Placeholder polyfill.
+			$('form').placeholder();
+
+		// Prioritize "important" elements on medium.
+			skel.on('+medium -medium', function() {
+				$.prioritize(
+					'.important\\28 medium\\29',
+					skel.breakpoint('medium').active
+				);
+			});
+
+		// Browser fixes.
+
+			// IE: Flexbox min-height bug.
+				if (skel.vars.browser == 'ie')
+					(function() {
+
+						var flexboxFixTimeoutId;
+
+						$window.on('resize.flexbox-fix', function() {
+
+							var $x = $('.fullscreen');
+
+							clearTimeout(flexboxFixTimeoutId);
+
+							flexboxFixTimeoutId = setTimeout(function() {
+
+								if ($x.prop('scrollHeight') > $window.height())
+									$x.css('height', 'auto');
+								else
+									$x.css('height', '100vh');
+
+							}, 250);
+
+						}).triggerHandler('resize.flexbox-fix');
+
+					})();
+
+			// Object fit workaround.
+				if (!skel.canUse('object-fit'))
+					(function() {
+
+						$('.banner .image, .spotlight .image').each(function() {
+
+							var $this = $(this),
+								$img = $this.children('img'),
+								positionClass = $this.parent().attr('class').match(/image-position-([a-z]+)/);
+
+							// Set image.
+								$this
+									.css('background-image', 'url("' + $img.attr('src') + '")')
+									.css('background-repeat', 'no-repeat')
+									.css('background-size', 'cover');
+
+							// Set position.
+								switch (positionClass.length > 1 ? positionClass[1] : '') {
+
+									case 'left':
+										$this.css('background-position', 'left');
+										break;
+
+									case 'right':
+										$this.css('background-position', 'right');
+										break;
+
+									default:
+									case 'center':
+										$this.css('background-position', 'center');
+										break;
+
+								}
+
+							// Hide original.
+								$img.css('opacity', '0');
+
+						});
+
+					})();
+
+		// Smooth scroll.
+			$('.smooth-scroll').scrolly();
+			$('.smooth-scroll-middle').scrolly({ anchor: 'middle' });
+
+		// Wrapper.
+			$wrapper.children()
+				.scrollex({
+					top:		'30vh',
+					bottom:		'30vh',
+					initialize:	function() {
+						$(this).addClass('is-inactive');
+					},
+					terminate:	function() {
+						$(this).removeClass('is-inactive');
+					},
+					enter:		function() {
+						$(this).removeClass('is-inactive');
+					},
+					leave:		function() {
+
+						var $this = $(this);
+
+						if ($this.hasClass('onscroll-bidirectional'))
+							$this.addClass('is-inactive');
+
+					}
+				});
+
+		// Items.
+			$('.items')
+				.scrollex({
+					top:		'30vh',
+					bottom:		'30vh',
+					delay:		50,
+					initialize:	function() {
+						$(this).addClass('is-inactive');
+					},
+					terminate:	function() {
+						$(this).removeClass('is-inactive');
+					},
+					enter:		function() {
+						$(this).removeClass('is-inactive');
+					},
+					leave:		function() {
+
+						var $this = $(this);
+
+						if ($this.hasClass('onscroll-bidirectional'))
+							$this.addClass('is-inactive');
+
+					}
+				})
+				.children()
+					.wrapInner('<div class="inner"></div>');
+
+		// Gallery.
+			$('.gallery')
+				.wrapInner('<div class="inner"></div>')
+				.prepend(skel.vars.mobile ? '' : '<div class="forward"></div><div class="backward"></div>')
+				.scrollex({
+					top:		'30vh',
+					bottom:		'30vh',
+					delay:		50,
+					initialize:	function() {
+						$(this).addClass('is-inactive');
+					},
+					terminate:	function() {
+						$(this).removeClass('is-inactive');
+					},
+					enter:		function() {
+						$(this).removeClass('is-inactive');
+					},
+					leave:		function() {
+
+						var $this = $(this);
+
+						if ($this.hasClass('onscroll-bidirectional'))
+							$this.addClass('is-inactive');
+
+					}
+				})
+				.children('.inner')
+					//.css('overflow', 'hidden')
+					.css('overflow-y', skel.vars.mobile ? 'visible' : 'hidden')
+					.css('overflow-x', skel.vars.mobile ? 'scroll' : 'hidden')
+					.scrollLeft(0);
+
+			// Style #1.
+				// ...
+
+			// Style #2.
+				$('.gallery')
+					.on('wheel', '.inner', function(event) {
+
+						var	$this = $(this),
+							delta = (event.originalEvent.deltaX * 10);
+
+						// Cap delta.
+							if (delta > 0)
+								delta = Math.min(25, delta);
+							else if (delta < 0)
+								delta = Math.max(-25, delta);
+
+						// Scroll.
+							$this.scrollLeft( $this.scrollLeft() + delta );
+
+					})
+					.on('mouseenter', '.forward, .backward', function(event) {
+
+						var $this = $(this),
+							$inner = $this.siblings('.inner'),
+							direction = ($this.hasClass('forward') ? 1 : -1);
+
+						// Clear move interval.
+							clearInterval(this._gallery_moveIntervalId);
+
+						// Start interval.
+							this._gallery_moveIntervalId = setInterval(function() {
+								$inner.scrollLeft( $inner.scrollLeft() + (5 * direction) );
+							}, 10);
+
+					})
+					.on('mouseleave', '.forward, .backward', function(event) {
+
+						// Clear move interval.
+							clearInterval(this._gallery_moveIntervalId);
+
+					});
+
+			// Lightbox.
+				$('.gallery.lightbox')
+					.on('click', 'a', function(event) {
+
+						var $a = $(this),
+							$gallery = $a.parents('.gallery'),
+							$modal = $gallery.children('.modal'),
+							$modalImg = $modal.find('img'),
+							href = $a.attr('href');
+
+						// Not an image? Bail.
+							if (!href.match(/\.(jpg|gif|png|mp4)$/))
+								return;
+
+						// Prevent default.
+							event.preventDefault();
+							event.stopPropagation();
+
+						// Locked? Bail.
+							if ($modal[0]._locked)
+								return;
+
+						// Lock.
+							$modal[0]._locked = true;
+
+						// Set src.
+							$modalImg.attr('src', href);
+
+						// Set visible.
+							$modal.addClass('visible');
+
+						// Focus.
+							$modal.focus();
+
+						// Delay.
+							setTimeout(function() {
+
+								// Unlock.
+									$modal[0]._locked = false;
+
+							}, 600);
+
+					})
+					.on('click', '.modal', function(event) {
+
+						var $modal = $(this),
+							$modalImg = $modal.find('img');
+
+						// Locked? Bail.
+							if ($modal[0]._locked)
+								return;
+
+						// Already hidden? Bail.
+							if (!$modal.hasClass('visible'))
+								return;
+
+						// Lock.
+							$modal[0]._locked = true;
+
+						// Clear visible, loaded.
+							$modal
+								.removeClass('loaded')
+
+						// Delay.
+							setTimeout(function() {
+
+								$modal
+									.removeClass('visible')
+
+								setTimeout(function() {
+
+									// Clear src.
+										$modalImg.attr('src', '');
+
+									// Unlock.
+										$modal[0]._locked = false;
+
+									// Focus.
+										$body.focus();
+
+								}, 475);
+
+							}, 125);
+
+					})
+					.on('keypress', '.modal', function(event) {
+
+						var $modal = $(this);
+
+						// Escape? Hide modal.
+							if (event.keyCode == 27)
+								$modal.trigger('click');
+
+					})
+					.prepend('<div class="modal" tabIndex="-1"><div class="inner"><img src="" /></div></div>')
+						.find('img')
+							.on('load', function(event) {
+
+								var $modalImg = $(this),
+									$modal = $modalImg.parents('.modal');
+
+								setTimeout(function() {
+
+									// No longer visible? Bail.
+										if (!$modal.hasClass('visible'))
+											return;
+
+									// Set loaded.
+										$modal.addClass('loaded');
+
+								}, 275);
+
+							});
 
 	});
 
